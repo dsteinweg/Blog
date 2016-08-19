@@ -67,6 +67,7 @@ Securing a new Linux server
     root@pluto:~# chmod 700 /home/darren/.ssh/ && chmod 600 /home/darren/.ssh/authorized_keys
     root@pluto:~# chown -R darren:darren /home/darren/.ssh/
     ```
+
 7.  Now everything should be ready for us to log out as `root` and log in as your user!
     ```
     root@rogue:~# exit
@@ -88,4 +89,26 @@ Securing a new Linux server
     Last login: Thu Aug 18 22:40:34 2016 from XX.XX.XX.XX
 
     darren@pluto:~$
+    ```
+
+8.  Now that we're logged in as our user,
+    we should disable password-based authentication for SSH,
+    and also disallow `root` from logging in over SSH.
+
+    Crack open your favorite terminal-based editor, I'll use `nano`:
+    ```
+    darren@pluto:~$ sudo nano /etc/ssh/sshd_config
+    ```
+
+    We want to replace 2 lines:
+    * `PermitRootLogin yes` > **`PermitRootLogin no`**
+    * `#PasswordAuthentication yes` > **`PasswordAuthentication no`**
+
+    Note that the `#` was removed from the beginning of `#PasswordAuthentication`,
+    which uncomments the directive.
+
+    After editing the `sshd_config` file, we need to restart
+    the `sshd` service to reload the configuration:
+    ```
+    darren@pluto:~$ sudo systemctl restart ssh
     ```
