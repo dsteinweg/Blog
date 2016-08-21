@@ -1,75 +1,55 @@
-Securing a new Linux server
-===========================
+==Disclaimer:== The following guide uses Ubuntu 16.04 LTS as the server's OS. While these commands will likely work on any Debian-flavored distro, they may not work on others.
 
-1.  Create virtual machine in host's web interface
 
-2.  Usually, you'll log in to your server via SSH with a password or with an SSH key.
-    The password approach is fine to get things set up, but long-term it's better
-    to use SSH keys for authenticating.
+######Step 1: Create the server
+Log in to your host's web interface and spin up a new server.
 
-    When you create your server, there should be an option to add your SSH public key,
-    which will get copied into the VM after it's created. Do it!
-    The SSH key will be added to `/root/.ssh/authorized_keys` which will allow you to
-    log in as `root` without having to type in a password.
+Depending on your host, when creating your server there might be an option to add your SSH public key. If you have that option, do it! You'll be able to log in to your server with a password or with an SSH key. While the password-based approach is fine to get things set up, longer term it's better to use SSH keys for authenticating.
 
-    If you don't know where your SSH public key is, you can usually find it in
-    your user profile on your local computer:
-    * On Windows: `C:\Users\{username}\.ssh\id_rsa.pub`
-    * On Linux: `/home/{username}/.ssh/id_rsa.pub`
+If you don't know where your SSH public key is, you can usually find it in your user profile on your local computer: `/home/{username}/.ssh/id_rsa.pub` on Linux or `C:\Users\{username}\.ssh\id_rsa.pub` on Windows.
 
-    If you don't have a SSH key yet, you need to generate one.
-    [Here's a great guide from Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2)
-    on how to do so.
+==Make sure you use the `.pub` file!== The `id_rsa` file is your *private* key and should never be shared. `.pub` for public.
 
-3.  When your VM is ready, make a note of the IP assigned to it.
-    I like to put that IP in my `hosts` file so I don't need to remember it.
-    Your `hosts` file is located:
-    * On Windows: `C:\Windows\System32\drivers\etc\hosts`
-    * On Linux: `/etc/hosts`
+If you don't have a SSH key yet, you need to generate one. [Here's a great guide from Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2) on how to do so.
 
-    If your VM's IP is `10.10.10.10` and you gave it the hostname `pluto`,
-    add the following to your `hosts` file:
-    ```
-    echo 10.10.10.10 pluto
-    ```
 
-    If you have a domain name you're going to use with your server,
-    you can utilize DNS to handle IP address resolution for you,
-    and thus won't need to edit your `hosts` file.
+######Step 2: Save your server's IP to your hosts file (optional)
+When your server is ready, make a note of the IP assigned to it. I like to put that IP in my `hosts` file so I don't need to remember it. Your `hosts` file is located at `/etc/hosts` on Linux or `C:\Windows\System32\drivers\etc\hosts` on Windows.
 
-3.  Now we can SSH into our shiny new server!
-    ```
+If your server's IP is `10.10.10.10` and you gave it the hostname `pluto`, add the following to your `hosts` file:
+
+    10.10.10.10 pluto
+
+
+######Step 3: SSH in to server
+Now we can SSH in to our shiny new server!
+
     darren@laptop:~$ ssh root@pluto
-    ```
 
-4.  Right away, I feel it's best to create a user for yourself.
-    The widely accepted best practice is to only log in as yourself,
-    and perform elevated operations with `sudo`,
-    rather than logging in as `root` to do everything.
-    ```
+
+######Step 4: Create a new user
+Right away, I feel it's best to create a new user for yourself. The widely accepted best practice is to only log in as a non-root user and perform elevated operations with `sudo` or similar, rather than logging in as `root` to do everything.
+
+I'm going to create my `darren` user:
+
     root@pluto:~# adduser darren
-    ```
-    Choose a password and optionally enter your personal information.
-    This will create the `darren` user and group,
-    and will also create a home directory at `/home/darren/`.
 
-5.  Next we'll want to add `darren` as a `sudoer`. With default settings,
-    adding `darren` to the `sudo` group should suffice:
-    ```
+Choose a password and optionally enter your personal information. This will create the `darren` user and group, and will also create a home directory at `/home/darren/`.
+
+Next we'll want to give your user as a `sudo` privileges. With default settings, adding `darren` to the `sudo` group should suffice:
+
     root@pluto:~# adduser darren sudo
-    ```
 
-6.  Next, we need to copy your SSH public key into your new user's home directory
-    so we can SSH in as that user:
-    ```
+Next, we need to copy your SSH public key into your user's home directory so we can SSH in as that user:
+
     root@pluto:~# mkdir /home/darren/.ssh
     root@pluto:~# cp /root/.ssh/authorized_keys /home/darren/.ssh/
-    root@pluto:~# chmod 700 /home/darren/.ssh/ && chmod 600 /home/darren/.ssh/authorized_keys
+    root@pluto:~# chmod 700 /home/darren/.ssh/
+    root@pluto:~# chmod 600 /home/darren/.ssh/authorized_keys
     root@pluto:~# chown -R darren:darren /home/darren/.ssh/
-    ```
 
-7.  Now everything should be ready for us to log out as `root` and log in as your user!
-    ```
+Now everything should be ready for us to log out as `root` and log in as your user!
+
     root@rogue:~# exit
     logout
     Connection to pluto closed.
@@ -89,26 +69,22 @@ Securing a new Linux server
     Last login: Thu Aug 18 22:40:34 2016 from XX.XX.XX.XX
 
     darren@pluto:~$
-    ```
 
-8.  Now that we're logged in as our user,
-    we should disable password-based authentication for SSH,
-    and also disallow `root` from logging in over SSH.
 
-    Crack open your favorite terminal-based editor, I'll use `nano`:
-    ```
+######Step 5: Update server's SSH configuration
+Now that we're logged in as our user, we should disable password-based authentication for SSH, and also disallow `root` from logging in over SSH.
+
+Crack open your favorite terminal-based editor, I'll use `nano`:
+
     darren@pluto:~$ sudo nano /etc/ssh/sshd_config
-    ```
 
-    We want to replace 2 lines:
-    * `PermitRootLogin yes` > **`PermitRootLogin no`**
-    * `#PasswordAuthentication yes` > **`PasswordAuthentication no`**
+We want to replace 2 lines:
 
-    Note that the `#` was removed from the beginning of `#PasswordAuthentication`,
-    which uncomments the directive.
+- Replace `PermitRootLogin yes` with **`PermitRootLogin no`**
+- Replace `#PasswordAuthentication yes` with **`PasswordAuthentication no`**
 
-    After editing the `sshd_config` file, we need to restart
-    the `sshd` service to reload the configuration:
-    ```
+Note that we removed the `#` from the beginning of `#PasswordAuthentication`, which uncomments the setting.
+
+After making changes to the `sshd_config` file, we need to restart the `ssh` service to have it reload the configuration:
+
     darren@pluto:~$ sudo systemctl restart ssh
-    ```
