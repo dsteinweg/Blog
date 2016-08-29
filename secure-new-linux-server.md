@@ -114,3 +114,6 @@ Note that we removed the `#` from the beginning of `#PasswordAuthentication`, wh
 After making changes to the `sshd_config` file, we need to restart the `ssh` service to have it reload the configuration:
 
     darren@pluto:~$ sudo systemctl restart ssh
+
+######That's it!
+Your server may not be hardened to the standards of Google, but for a hobbyist it should suffice. There are a few more steps one could take to go the extra mile, but I'll cover that in a future post.
